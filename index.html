@@ -84,7 +84,8 @@
             Book, MapPin, Star, Calendar, Trash2, Plus, 
             ChevronDown, ChevronUp, Image as ImageIcon, Map,
             Filter, Archive, Coffee, Heart, Globe, LogIn, LogOut,
-            User, Settings, Lightbulb, X, ExternalLink, MessageSquare, Repeat
+            User, Settings, Lightbulb, X, ExternalLink, MessageSquare,
+            Layout, GitMerge, FileText
         } from 'lucide-react';
         
         import { initializeApp } from 'firebase/app';
@@ -149,6 +150,33 @@
             love: { label: '情感時刻', icon: Heart, color: 'text-rose-400', border: 'border-rose-500/30', bg: 'bg-rose-500/10' }
         };
 
+        const FUNNEL_STEPS = [
+            {
+                layer: "第一層：麵包屑 (Breadcrumbs)",
+                tool: "Google Calendar / Waypoints",
+                color: "slate",
+                action: "日常隨手記",
+                content: "關鍵字、地點、照片",
+                purpose: "留下線索，不讓記憶憑空消失"
+            },
+            {
+                layer: "第二層：策展與萃取 (Curation)",
+                tool: "Life Archives",
+                color: "indigo",
+                action: "每季一次，打開第一層回顧",
+                content: "挑選 3-5 個「定義這段時間」的精華事件",
+                purpose: "賦予意義，封存記憶"
+            },
+            {
+                layer: "第三層：銷毀與放下 (Release)",
+                tool: "Trash Can",
+                color: "rose",
+                action: "確認存入後，丟掉舊筆記",
+                content: "物理銷毀或數位封存",
+                purpose: "輕量化人生，專注當下飛行"
+            }
+        ];
+
         const App = () => {
             const [user, setUser] = useState(null);
             const [archives, setArchives] = useState([]);
@@ -157,6 +185,7 @@
             // UI States
             const [isAdding, setIsAdding] = useState(false);
             const [showPhilosophy, setShowPhilosophy] = useState(false); 
+            const [philosophyTab, setPhilosophyTab] = useState('protocol'); // 'protocol' | 'architecture'
             
             // Input States
             const [newTitle, setNewTitle] = useState('');
@@ -432,7 +461,7 @@
                                                     </div>
                                                 )}
 
-                                                {/* Retrospectives Section (Added) */}
+                                                {/* Retrospectives Section */}
                                                 <div className="mt-4 pt-3 border-t border-slate-800/50">
                                                     {archive.retrospectives && archive.retrospectives.map((retro, idx) => (
                                                         <div key={idx} className="text-xs text-indigo-300 mb-2 pl-2 border-l-2 border-indigo-500/50">
@@ -479,72 +508,135 @@
                         )}
                     </div>
 
-                    {/* Philosophy Modal (Updated) */}
+                    {/* Philosophy Modal (Updated with Tabs) */}
                     {showPhilosophy && (
                         <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in">
-                            <div className="bg-slate-900 border border-emerald-500/30 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden relative max-h-[85vh] flex flex-col">
-                                <button onClick={() => setShowPhilosophy(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white"><X size={24} /></button>
+                            <div className="bg-slate-900 border border-emerald-500/30 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden relative flex flex-col max-h-[85vh]">
+                                <button onClick={() => setShowPhilosophy(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white z-10"><X size={24} /></button>
                                 
-                                <div className="p-8 overflow-y-auto custom-scrollbar">
-                                    <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                                        <Lightbulb size={32} className="text-emerald-400" />
+                                <div className="p-8 pb-4 text-center border-b border-emerald-900/30">
+                                    <div className="w-12 h-12 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                                        <Lightbulb size={24} className="text-emerald-400" />
                                     </div>
-                                    <h2 className="text-xl font-bold text-white mb-6 text-center">檔案館守則 (Protocols)</h2>
-                                    
-                                    <div className="space-y-6 text-left">
-                                        {/* Core Philosophy */}
-                                        <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
-                                            <h3 className="text-emerald-400 font-bold text-sm mb-2">核心理念</h3>
-                                            <p className="text-slate-300 text-sm leading-relaxed">
-                                                「現在開始，不要『寫』日記，改為『留』線索。」<br/><br/>
-                                                把這裡當作每季或每年的「策展」。平時只負責丟麵包屑（照片、關鍵字），等到真的有空、有心情時，再把重要的精華放進來。
-                                            </p>
-                                        </div>
+                                    <h2 className="text-lg font-bold text-white">檔案館守則</h2>
+                                </div>
 
-                                        {/* New Workflow */}
-                                        <div className="bg-emerald-900/20 p-4 rounded-xl border border-emerald-500/30">
-                                            <h3 className="text-emerald-400 font-bold text-sm mb-2 flex items-center gap-2">
-                                                <Repeat size={14}/> 您的新工作流 (The Flow)
-                                            </h3>
-                                            <ul className="text-slate-300 text-xs leading-relaxed space-y-2">
-                                                <li className="flex gap-2">
-                                                    <span className="text-slate-500">01.</span>
-                                                    <span><strong>日常 (Daily):</strong> 在 Google Calendar 上隨手丟麵包屑。</span>
-                                                </li>
-                                                <li className="flex gap-2">
-                                                    <span className="text-slate-500">02.</span>
-                                                    <span><strong>每季 (Quarterly):</strong> 打開檔案館，萃取精華故事存入。</span>
-                                                </li>
-                                                <li className="flex gap-2">
-                                                    <span className="text-slate-500">03.</span>
-                                                    <span><strong>平時:</strong> 忘記它的存在，專心過生活。</span>
-                                                </li>
-                                                <li className="flex gap-2">
-                                                    <span className="text-slate-500">04.</span>
-                                                    <span><strong>低潮時:</strong> 回顧檔案館，獲取能量，只看不改。</span>
-                                                </li>
-                                            </ul>
-                                        </div>
+                                {/* Tabs */}
+                                <div className="flex border-b border-emerald-900/30 bg-slate-900/50">
+                                    <button 
+                                        onClick={() => setPhilosophyTab('protocol')}
+                                        className={`flex-1 py-3 text-xs font-bold transition-colors ${philosophyTab === 'protocol' ? 'text-emerald-400 border-b-2 border-emerald-400' : 'text-slate-500'}`}
+                                    >
+                                        核心守則
+                                    </button>
+                                    <button 
+                                        onClick={() => setPhilosophyTab('architecture')}
+                                        className={`flex-1 py-3 text-xs font-bold transition-colors ${philosophyTab === 'architecture' ? 'text-indigo-400 border-b-2 border-indigo-400' : 'text-slate-500'}`}
+                                    >
+                                        系統架構分析
+                                    </button>
+                                </div>
+                                
+                                <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
+                                    {philosophyTab === 'protocol' ? (
+                                        <div className="space-y-6 text-left">
+                                            {/* Core Philosophy */}
+                                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+                                                <h3 className="text-emerald-400 font-bold text-sm mb-2">核心理念</h3>
+                                                <p className="text-slate-300 text-sm leading-relaxed">
+                                                    「現在開始，不要『寫』日記，改為『留』線索。」<br/><br/>
+                                                    把這裡當作每季或每年的「策展」。平時只負責丟麵包屑（照片、關鍵字），等到真的有空、有心情時，再把重要的精華放進來。
+                                                </p>
+                                            </div>
 
-                                        {/* Google Calendar Strategy */}
-                                        <div className="bg-blue-900/20 p-4 rounded-xl border border-blue-500/30">
-                                            <h3 className="text-blue-400 font-bold text-sm mb-2 flex items-center gap-2">
-                                                <Calendar size={14}/> 麵包屑戰略 (Google Calendar)
-                                            </h3>
-                                            <ul className="text-slate-300 text-xs leading-relaxed list-disc pl-4 space-y-1">
-                                                <li><strong>關鍵字:</strong> 只打 3 個關鍵字 (例如: #被罵 #想離職)。</li>
-                                                <li><strong>照片:</strong> 隨手拍，讓未來的自己看到照片就能想起當時的感覺。</li>
-                                            </ul>
-                                            <a 
-                                                href="https://calendar.google.com/" 
-                                                target="_blank" 
-                                                rel="noopener noreferrer"
-                                                className="mt-3 flex items-center justify-center gap-2 w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition-colors"
-                                            >
-                                                <ExternalLink size={12}/> 打開 Google Calendar
-                                            </a>
+                                            {/* Google Calendar Strategy */}
+                                            <div className="bg-blue-900/20 p-4 rounded-xl border border-blue-500/30">
+                                                <h3 className="text-blue-400 font-bold text-sm mb-2 flex items-center gap-2">
+                                                    <Calendar size={14}/> 麵包屑戰略 (Google Calendar)
+                                                </h3>
+                                                <ul className="text-slate-300 text-xs leading-relaxed list-disc pl-4 space-y-1">
+                                                    <li><strong>日常 (Daily):</strong> 不寫日記。只在行事曆上打 3 個關鍵字 (例如: #被罵 #想離職)。</li>
+                                                    <li><strong>回顧 (Review):</strong> 整理檔案館時，搜尋行事曆關鍵字，瞬間喚醒記憶。</li>
+                                                </ul>
+                                                <a 
+                                                    href="https://calendar.google.com/" 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer"
+                                                    className="mt-3 flex items-center justify-center gap-2 w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition-colors"
+                                                >
+                                                    <ExternalLink size={12}/> 打開 Google Calendar
+                                                </a>
+                                            </div>
+
+                                            {/* Triggers */}
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div className="bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+                                                    <h4 className="text-amber-400 font-bold text-xs mb-1">什麼時候記? (Capture)</h4>
+                                                    <p className="text-slate-400 text-[10px]">Type A 震撼彈：當下立刻記（離職、分手、錄取）。</p>
+                                                </div>
+                                                <div className="bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+                                                    <h4 className="text-amber-400 font-bold text-xs mb-1">什麼時候更新? (Update)</h4>
+                                                    <p className="text-slate-400 text-[10px]">當你產生「共鳴」時，或一個人生章節結束時。</p>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
+                                    ) : (
+                                        <div className="space-y-6 text-left">
+                                            {/* Architecture Analysis Table */}
+                                            <div className="overflow-hidden rounded-xl border border-slate-700">
+                                                <table className="w-full text-xs text-left">
+                                                    <thead className="bg-slate-800 text-slate-400">
+                                                        <tr>
+                                                            <th className="p-3">特徵</th>
+                                                            <th className="p-3 text-emerald-400">航行日誌 (Waypoints)</th>
+                                                            <th className="p-3 text-indigo-400">生命檔案館 (Life Archives)</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-slate-800 bg-slate-900/50 text-slate-300">
+                                                        <tr><td className="p-3 font-bold text-slate-500">比喻</td><td className="p-3">儀表板便利貼</td><td className="p-3">博物館展品</td></tr>
+                                                        <tr><td className="p-3 font-bold text-slate-500">視角</td><td className="p-3">飛行員 (Pilot)</td><td className="p-3">策展人 (Curator)</td></tr>
+                                                        <tr><td className="p-3 font-bold text-slate-500">頻率</td><td className="p-3">高頻 (隨時)</td><td className="p-3">低頻 (每季/年)</td></tr>
+                                                        <tr><td className="p-3 font-bold text-slate-500">長度</td><td className="p-3">短 (關鍵字)</td><td className="p-3">長 (故事/脈絡)</td></tr>
+                                                        <tr><td className="p-3 font-bold text-slate-500">用途</td><td className="p-3">導航：下一步？</td><td className="p-3">定位：我從哪來？</td></tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            {/* Usage Scenarios */}
+                                            <div className="bg-indigo-900/10 p-4 rounded-xl border border-indigo-500/20">
+                                                <h3 className="text-indigo-400 font-bold text-sm mb-3 flex items-center gap-2">
+                                                    <Archive size={14}/> 使用情境 (Usage Scenarios)
+                                                </h3>
+                                                <ul className="text-slate-300 text-xs list-disc pl-4 space-y-2 leading-relaxed">
+                                                    <li><strong>整理舊物時：</strong>把舊筆記本裡「捨不得忘」的故事輸入進去，然後把紙本丟掉 (萃取與銷毀)。</li>
+                                                    <li><strong>迷惘時：</strong>回顧人生時間軸，看看自己這五年完成了哪些大事 (Milestones)，確認自己其實有在前進。</li>
+                                                    <li><strong>季度/年度回顧：</strong>從 Google Calendar 的「麵包屑」中挑選精華，轉化為永久保存的檔案。</li>
+                                                </ul>
+                                            </div>
+
+                                            {/* Execution Strategy Funnel (NEW) */}
+                                            <div className="space-y-3 mt-4">
+                                                {[
+                                                    {layer: "第一層：麵包屑 (Breadcrumbs)", tool: "Google Calendar / Waypoints", color: "slate", action: "日常隨手記", content: "關鍵字、地點、照片", purpose: "留下線索，不讓記憶憑空消失"},
+                                                    {layer: "第二層：策展與萃取 (Curation)", tool: "Life Archives", color: "indigo", action: "每季一次，打開第一層回顧", content: "挑選 3-5 個「定義這段時間」的精華事件", purpose: "賦予意義，封存記憶"},
+                                                    {layer: "第三層：銷毀與放下 (Release)", tool: "Trash Can", color: "rose", action: "確認存入後，丟掉舊筆記", content: "物理銷毀或數位封存", purpose: "輕量化人生，專注當下飛行"}
+                                                ].map((step, i) => (
+                                                    <div key={i} className={`p-3 rounded border border-${step.color}-500/30 bg-${step.color}-500/5`}>
+                                                        <div className={`font-bold text-${step.color}-400 text-xs mb-2`}>
+                                                            <span className="mr-2 border border-current px-1.5 rounded text-[10px]">{i+1}</span>
+                                                            {step.layer}
+                                                        </div>
+                                                        <div className="space-y-1 pl-6">
+                                                            <div className="text-[10px] text-slate-300"><span className="text-slate-500 font-bold">動作：</span>{step.action}</div>
+                                                            <div className="text-[10px] text-slate-300"><span className="text-slate-500 font-bold">內容：</span>{step.content}</div>
+                                                            <div className="text-[10px] text-slate-300"><span className="text-slate-500 font-bold">目的：</span>{step.purpose}</div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                        </div>
+                                    )}
 
                                     <button onClick={() => setShowPhilosophy(false)} className="mt-8 w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-bold text-sm transition-colors">
                                         銘記在心 (ACKNOWLEDGED)
