@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Life Archives</title>
+    
+    <!-- Google Fonts: Noto Sans TC (思源黑體) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- 系統診斷腳本 -->
+    <script>
+        window.onerror = function(msg, url, line, col, error) {
+            if (msg.includes("ResizeObserver")) return;
+            const consoleDiv = document.getElementById('sys-console');
+            if (consoleDiv) {
+                consoleDiv.style.display = 'block';
+                const err = document.createElement('div');
+                err.style.color = '#ef4444';
+                err.innerHTML = `<strong>[SYSTEM ERROR]:</strong> ${msg}`;
+                consoleDiv.appendChild(err);
+            }
+            return false;
+        };
+    </script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="importmap">
+    {
+        "imports": {
+            "react": "https://esm.sh/react@18.2.0",
+            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+            "lucide-react": "https://esm.sh/lucide-react@0.263.1",
+            "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+            "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js",
+            "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
+        }
+    }
+    </script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body { 
+            background-color: #0f172a; 
+            color: #e2e8f0; 
+            -webkit-tap-highlight-color: transparent; 
+            overscroll-behavior-y: none;
+            /* 字體優化：優先使用 Noto Sans TC (思源黑體) */
+            font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", "Heiti TC", sans-serif;
+            font-weight: 400;
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.1); }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(16, 185, 129, 0.3); border-radius: 2px; }
+        
+        .scan-line { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 2px; 
+            background: rgba(16, 185, 129, 0.3); 
+            animation: scan 3s linear infinite; pointer-events: none; z-index: 50; opacity: 0.3; 
+        }
+        @keyframes scan { 0% { transform: translateY(-100vh); } 100% { transform: translateY(100vh); } }
+        
+        input, textarea, select { font-size: 16px; font-family: inherit; } 
+
+        #sys-console {
+            display: none;
+            position: fixed; top: 60px; left: 20px; right: 20px;
+            background: rgba(15, 23, 42, 0.95); border: 1px solid #ef4444;
+            padding: 20px; border-radius: 8px; z-index: 9999;
+            font-family: monospace; font-size: 14px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <div id="sys-console"></div>
+
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { 
+            Book, MapPin, Star, Calendar, Trash2, Plus, 
+            ChevronDown, ChevronUp, Image as ImageIcon, Map,
+            Filter, Archive, Coffee, Heart, Globe, LogIn, LogOut,
+            User, Settings, Lightbulb, X, ExternalLink, MessageSquare, Repeat
+        } from 'lucide-react';
+        
+        import { initializeApp } from 'firebase/app';
+        import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, serverTimestamp, query, orderBy, where } from 'firebase/firestore';
+
+        // =================================================================================
+        // ▼▼▼ 使用者設定區 (請填入您的資料庫設定) ▼▼▼
+        // =================================================================================
+        
+        const myFirebaseConfig = {
+  apiKey: "AIzaSyAgNktz8JUCOglOtB-zyle-FSfIV0TbVRc",
+  authDomain: "blackbox-48253.firebaseapp.com",
+  projectId: "blackbox-48253",
+  storageBucket: "blackbox-48253.firebasestorage.app",
+  messagingSenderId: "349317379720",
+  appId: "1:349317379720:web:e006daa4643c5310ebd13d"
+        };
+
+        // =================================================================================
+
+        const firebaseConfig = (typeof __firebase_config !== 'undefined') ? JSON.parse(__firebase_config) : myFirebaseConfig;
+        
+        let app, auth, db;
+        const provider = new GoogleAuthProvider();
+        try {
+            if (Object.keys(firebaseConfig).length > 0 && firebaseConfig.apiKey) {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+            }
+        } catch (e) { console.error("Firebase init failed:", e); }
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'life-archives-standalone';
+
+        // --- Mock Data ---
+        const MOCK_ARCHIVES = [
+            { 
+                id: 'm1', 
+                title: '東京獨旅：藍瓶咖啡', 
+                date: '2023-11-15', 
+                type: 'travel', 
+                content: '陽光灑下來的時候覺得世界很安靜，那是久違的放鬆感。', 
+                tags: ['Tokyo', 'Coffee'],
+                retrospectives: []
+            },
+            { 
+                id: 'm2', 
+                title: '升職這一天', 
+                date: '2022-06-20', 
+                type: 'milestone', 
+                content: '雖然很累，但證明了自己是有能力的。', 
+                tags: ['Career'],
+                retrospectives: [{note: '現在回頭看，那時候的焦慮其實都是成長的養分。', timestamp: '2024-01-01T12:00:00.000Z'}]
+            },
+        ];
+
+        const CATEGORIES = {
+            travel: { label: '旅遊筆記', icon: Globe, color: 'text-emerald-400', border: 'border-emerald-500/30', bg: 'bg-emerald-500/10' },
+            milestone: { label: '人生大事', icon: Star, color: 'text-amber-400', border: 'border-amber-500/30', bg: 'bg-amber-500/10' },
+            memory: { label: '回憶碎片', icon: Book, color: 'text-indigo-400', border: 'border-indigo-500/30', bg: 'bg-indigo-500/10' },
+            love: { label: '情感時刻', icon: Heart, color: 'text-rose-400', border: 'border-rose-500/30', bg: 'bg-rose-500/10' }
+        };
+
+        const App = () => {
+            const [user, setUser] = useState(null);
+            const [archives, setArchives] = useState([]);
+            const [loading, setLoading] = useState(true);
+            
+            // UI States
+            const [isAdding, setIsAdding] = useState(false);
+            const [showPhilosophy, setShowPhilosophy] = useState(false); 
+            
+            // Input States
+            const [newTitle, setNewTitle] = useState('');
+            const [newDate, setNewDate] = useState(new Date().toISOString().split('T')[0]);
+            const [newType, setNewType] = useState('travel');
+            const [newContent, setNewContent] = useState('');
+            const [newTags, setNewTags] = useState('');
+
+            // Retrospective States
+            const [retroInputId, setRetroInputId] = useState(null);
+            const [retroText, setRetroText] = useState('');
+
+            // Filter State
+            const [filterType, setFilterType] = useState('all');
+
+            // Auth
+            useEffect(() => {
+                if(!auth) { 
+                    setArchives(MOCK_ARCHIVES);
+                    setLoading(false); 
+                    return; 
+                }
+                const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+                    setUser(currentUser);
+                    if (!currentUser) {
+                        setArchives(MOCK_ARCHIVES);
+                        setLoading(false);
+                    }
+                });
+                return () => unsubscribe();
+            }, []);
+
+            // Data Fetching
+            useEffect(() => {
+                if(!user || !db) return;
+                
+                const q = query(collection(db, 'artifacts', appId, 'users', user.uid, 'archives'), orderBy('date', 'desc'));
+                const unsubscribe = onSnapshot(q, (snapshot) => {
+                    const loaded = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    setArchives(loaded);
+                    setLoading(false);
+                }, (error) => {
+                    console.error("Error fetching archives:", error);
+                    setLoading(false);
+                });
+
+                return () => unsubscribe();
+            }, [user]);
+
+            const handleLogin = async () => {
+                if (!auth) return alert("Firebase 設定未填寫");
+                try { await signInWithPopup(auth, provider); } catch (e) { 
+                     if (e.code !== 'auth/unauthorized-domain' && e.code !== 'auth/popup-closed-by-user') {
+                         alert(`登入失敗: ${e.message}`);
+                    }
+                }
+            };
+            const handleLogout = async () => { if(auth) await signOut(auth); };
+
+            const addArchive = async () => {
+                if (!newTitle.trim() || !newContent.trim()) return;
+                
+                const entry = {
+                    title: newTitle,
+                    date: newDate,
+                    type: newType,
+                    content: newContent,
+                    tags: newTags.split(',').map(t => t.trim()).filter(t => t),
+                    createdAt: serverTimestamp(),
+                    retrospectives: []
+                };
+
+                if (db && user) {
+                    await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'archives'), entry);
+                } else {
+                    setArchives(prev => [{id: Date.now(), ...entry}, ...prev]);
+                }
+                
+                // Reset form
+                setNewTitle('');
+                setNewContent('');
+                setNewTags('');
+                setIsAdding(false);
+            };
+
+            const deleteArchive = async (id) => {
+                if (!confirm("確定要刪除這段回憶嗎？")) return;
+                if (db && user && !id.toString().startsWith('m')) {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'archives', id));
+                } else {
+                    setArchives(prev => prev.filter(a => a.id !== id));
+                }
+            };
+
+            const handleAddRetro = async (archiveId) => {
+                if (!retroText.trim()) return;
+                
+                if (db && user && !archiveId.toString().startsWith('m')) {
+                    const archiveRef = doc(db, 'artifacts', appId, 'users', user.uid, 'archives', archiveId);
+                    const currentArchive = archives.find(a => a.id === archiveId);
+                    const currentRetros = currentArchive.retrospectives || [];
+                    
+                    await updateDoc(archiveRef, {
+                        retrospectives: [...currentRetros, { note: retroText, timestamp: new Date().toISOString() }]
+                    });
+                } else {
+                    // Mock update
+                    setArchives(prev => prev.map(a => {
+                        if (a.id === archiveId) {
+                            return { ...a, retrospectives: [...(a.retrospectives || []), { note: retroText, timestamp: new Date().toISOString() }] };
+                        }
+                        return a;
+                    }));
+                }
+                setRetroInputId(null);
+                setRetroText('');
+            };
+
+            const filteredArchives = filterType === 'all' 
+                ? archives 
+                : archives.filter(a => a.type === filterType);
+
+            // Group by Year
+            const groupedArchives = filteredArchives.reduce((acc, curr) => {
+                const year = curr.date.split('-')[0];
+                if (!acc[year]) acc[year] = [];
+                acc[year].push(curr);
+                return acc;
+            }, {});
+
+            const sortedYears = Object.keys(groupedArchives).sort((a, b) => b - a);
+
+            if (loading) return <div className="h-screen bg-slate-950 flex items-center justify-center text-emerald-500 font-mono">ARCHIVE LOADING...</div>;
+
+            return (
+                <div className="min-h-screen bg-slate-950 text-slate-200 font-mono pb-20 relative">
+                    <div className="scan-line"></div>
+
+                    {/* Header */}
+                    <div className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur border-b border-emerald-900/50 p-4 flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-emerald-500/10 rounded border border-emerald-500/30"><Archive className="text-emerald-400" size={20} /></div>
+                            <div>
+                                <h1 className="text-lg font-bold tracking-widest text-emerald-400">LIFE ARCHIVES</h1>
+                                <p className="text-[10px] text-slate-500">{user ? user.email : 'LEGACY STORAGE'}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <button onClick={() => setShowPhilosophy(true)} className="text-emerald-400/70 hover:text-emerald-400 p-2 rounded-full hover:bg-emerald-500/10 transition-colors">
+                                <Lightbulb size={20} />
+                            </button>
+                            {user ? (
+                                <button onClick={handleLogout}><LogOut size={20} className="text-slate-500 hover:text-white"/></button>
+                            ) : (
+                                <button onClick={handleLogin} className="flex items-center gap-1 bg-emerald-600/20 text-emerald-400 px-3 py-1 rounded text-xs font-bold border border-emerald-500/30"><LogIn size={12}/> LOGIN</button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Add Button & Filter */}
+                    <div className="p-4 flex gap-2">
+                        <button 
+                            onClick={() => setIsAdding(!isAdding)}
+                            className={`flex-1 py-3 rounded-lg border flex items-center justify-center gap-2 transition-all ${isAdding ? 'bg-slate-800 border-slate-600' : 'bg-emerald-600 hover:bg-emerald-500 border-transparent text-white'}`}
+                        >
+                            {isAdding ? <X size={18}/> : <Plus size={18}/>}
+                            <span className="font-bold text-sm">{isAdding ? '取消' : '萃取舊紀錄'}</span>
+                        </button>
+                        
+                        <div className="relative">
+                            <select 
+                                value={filterType} 
+                                onChange={(e) => setFilterType(e.target.value)}
+                                className="h-full bg-slate-900 border border-slate-700 rounded-lg px-4 text-xs focus:outline-none appearance-none text-emerald-400"
+                            >
+                                <option value="all">顯示全部</option>
+                                {Object.entries(CATEGORIES).map(([k, v]) => (
+                                    <option key={k} value={k}>{v.label}</option>
+                                ))}
+                            </select>
+                            <Filter size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"/>
+                        </div>
+                    </div>
+
+                    {/* Add Form */}
+                    {isAdding && (
+                        <div className="mx-4 mb-6 p-4 bg-slate-900 border border-emerald-500/30 rounded-xl animate-in slide-in-from-top-4">
+                            <div className="space-y-3">
+                                <div className="flex gap-2">
+                                    <input 
+                                        type="date" 
+                                        value={newDate} 
+                                        onChange={e => setNewDate(e.target.value)}
+                                        className="bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm w-1/3"
+                                    />
+                                    <select 
+                                        value={newType} 
+                                        onChange={e => setNewType(e.target.value)}
+                                        className="bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm flex-1"
+                                    >
+                                        {Object.entries(CATEGORIES).map(([k, v]) => (
+                                            <option key={k} value={k}>{v.label}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <input 
+                                    type="text" 
+                                    value={newTitle} 
+                                    onChange={e => setNewTitle(e.target.value)}
+                                    placeholder="標題 (例如：東京之旅、第一份工作...)"
+                                    className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm focus:border-emerald-500 outline-none"
+                                />
+                                <textarea 
+                                    value={newContent} 
+                                    onChange={e => setNewContent(e.target.value)}
+                                    placeholder="記錄當下的感受、這段回憶為什麼重要..."
+                                    className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm focus:border-emerald-500 outline-none h-24"
+                                />
+                                <input 
+                                    type="text" 
+                                    value={newTags} 
+                                    onChange={e => setNewTags(e.target.value)}
+                                    placeholder="標籤 (以逗號分隔，例如：日本, 獨旅)"
+                                    className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-xs"
+                                />
+                                <button onClick={addArchive} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded font-bold text-sm">
+                                    存入檔案館
+                                </button>
+                                <p className="text-[10px] text-slate-500 text-center mt-2">
+                                    * 輸入完畢後，建議直接將紙本記錄丟棄或封存。
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Timeline */}
+                    <div className="px-4 space-y-8">
+                        {sortedYears.map(year => (
+                            <div key={year} className="relative">
+                                <div className="sticky top-16 z-30 py-2 bg-slate-950/90 backdrop-blur w-full border-b border-slate-800 mb-4 flex items-center gap-2">
+                                    <span className="text-2xl font-black text-slate-500">{year}</span>
+                                    <div className="h-[1px] bg-slate-800 flex-1"></div>
+                                </div>
+                                
+                                <div className="space-y-4 pl-4 border-l-2 border-slate-800 ml-2">
+                                    {groupedArchives[year].map(archive => {
+                                        const cat = CATEGORIES[archive.type] || CATEGORIES.memory;
+                                        const Icon = cat.icon;
+                                        return (
+                                            <div key={archive.id} className={`relative bg-slate-900 border ${cat.border} p-4 rounded-xl group transition-all hover:bg-slate-800`}>
+                                                {/* Dot on timeline */}
+                                                <div className={`absolute -left-[25px] top-4 w-4 h-4 rounded-full border-2 bg-slate-950 flex items-center justify-center ${cat.border.replace('border', 'border-')}`}>
+                                                    <div className={`w-1.5 h-1.5 rounded-full ${cat.bg.replace('bg-', 'bg-').replace('/10', '')}`}></div>
+                                                </div>
+                                                
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <Icon size={16} className={cat.color} />
+                                                        <span className={`text-xs font-bold px-2 py-0.5 rounded ${cat.bg} ${cat.color}`}>{cat.label}</span>
+                                                        <span className="text-xs text-slate-500">{archive.date}</span>
+                                                    </div>
+                                                    <button onClick={() => deleteArchive(archive.id)} className="text-slate-600 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={14}/></button>
+                                                </div>
+                                                
+                                                <h3 className="text-base font-bold text-white mb-2">{archive.title}</h3>
+                                                <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">{archive.content}</p>
+                                                
+                                                {archive.tags && archive.tags.length > 0 && (
+                                                    <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-slate-800">
+                                                        {archive.tags.map((tag, i) => (
+                                                            <span key={i} className="text-[10px] text-slate-500">#{tag}</span>
+                                                        ))}
+                                                    </div>
+                                                )}
+
+                                                {/* Retrospectives Section (Added) */}
+                                                <div className="mt-4 pt-3 border-t border-slate-800/50">
+                                                    {archive.retrospectives && archive.retrospectives.map((retro, idx) => (
+                                                        <div key={idx} className="text-xs text-indigo-300 mb-2 pl-2 border-l-2 border-indigo-500/50">
+                                                            <span className="opacity-50 mr-2">[{new Date(retro.timestamp).toLocaleDateString()}]</span>
+                                                            {retro.note}
+                                                        </div>
+                                                    ))}
+
+                                                    <button 
+                                                        onClick={() => setRetroInputId(retroInputId === archive.id ? null : archive.id)}
+                                                        className="text-[10px] text-slate-500 hover:text-emerald-400 flex items-center gap-1 transition-colors mt-2"
+                                                    >
+                                                        <MessageSquare size={12} /> 寫下新觀點
+                                                    </button>
+
+                                                    {retroInputId === archive.id && (
+                                                        <div className="mt-2 flex gap-2 animate-in fade-in">
+                                                            <input 
+                                                                autoFocus
+                                                                type="text" 
+                                                                value={retroText}
+                                                                onChange={e => setRetroText(e.target.value)}
+                                                                placeholder="現在回頭看，有什麼新想法？"
+                                                                className="flex-1 bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs focus:outline-none focus:border-emerald-500"
+                                                                onKeyDown={e => e.key === 'Enter' && handleAddRetro(archive.id)}
+                                                            />
+                                                            <button onClick={() => handleAddRetro(archive.id)} className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded text-xs">確認</button>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ))}
+                        
+                        {sortedYears.length === 0 && !loading && (
+                            <div className="text-center py-20 text-slate-600">
+                                <p className="mb-2">ARCHIVE EMPTY</p>
+                                <p className="text-xs">這裡空空如也。試著輸入一則你最珍貴的回憶吧。</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Philosophy Modal (Updated) */}
+                    {showPhilosophy && (
+                        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in">
+                            <div className="bg-slate-900 border border-emerald-500/30 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden relative max-h-[85vh] flex flex-col">
+                                <button onClick={() => setShowPhilosophy(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white"><X size={24} /></button>
+                                
+                                <div className="p-8 overflow-y-auto custom-scrollbar">
+                                    <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                                        <Lightbulb size={32} className="text-emerald-400" />
+                                    </div>
+                                    <h2 className="text-xl font-bold text-white mb-6 text-center">檔案館守則 (Protocols)</h2>
+                                    
+                                    <div className="space-y-6 text-left">
+                                        {/* Core Philosophy */}
+                                        <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+                                            <h3 className="text-emerald-400 font-bold text-sm mb-2">核心理念</h3>
+                                            <p className="text-slate-300 text-sm leading-relaxed">
+                                                「現在開始，不要『寫』日記，改為『留』線索。」<br/><br/>
+                                                把這裡當作每季或每年的「策展」。平時只負責丟麵包屑（照片、關鍵字），等到真的有空、有心情時，再把重要的精華放進來。
+                                            </p>
+                                        </div>
+
+                                        {/* New Workflow */}
+                                        <div className="bg-emerald-900/20 p-4 rounded-xl border border-emerald-500/30">
+                                            <h3 className="text-emerald-400 font-bold text-sm mb-2 flex items-center gap-2">
+                                                <Repeat size={14}/> 您的新工作流 (The Flow)
+                                            </h3>
+                                            <ul className="text-slate-300 text-xs leading-relaxed space-y-2">
+                                                <li className="flex gap-2">
+                                                    <span className="text-slate-500">01.</span>
+                                                    <span><strong>日常 (Daily):</strong> 在 Google Calendar 上隨手丟麵包屑。</span>
+                                                </li>
+                                                <li className="flex gap-2">
+                                                    <span className="text-slate-500">02.</span>
+                                                    <span><strong>每季 (Quarterly):</strong> 打開檔案館，萃取精華故事存入。</span>
+                                                </li>
+                                                <li className="flex gap-2">
+                                                    <span className="text-slate-500">03.</span>
+                                                    <span><strong>平時:</strong> 忘記它的存在，專心過生活。</span>
+                                                </li>
+                                                <li className="flex gap-2">
+                                                    <span className="text-slate-500">04.</span>
+                                                    <span><strong>低潮時:</strong> 回顧檔案館，獲取能量，只看不改。</span>
+                                                </li>
+                                            </ul>
+                                        </div>
+
+                                        {/* Google Calendar Strategy */}
+                                        <div className="bg-blue-900/20 p-4 rounded-xl border border-blue-500/30">
+                                            <h3 className="text-blue-400 font-bold text-sm mb-2 flex items-center gap-2">
+                                                <Calendar size={14}/> 麵包屑戰略 (Google Calendar)
+                                            </h3>
+                                            <ul className="text-slate-300 text-xs leading-relaxed list-disc pl-4 space-y-1">
+                                                <li><strong>關鍵字:</strong> 只打 3 個關鍵字 (例如: #被罵 #想離職)。</li>
+                                                <li><strong>照片:</strong> 隨手拍，讓未來的自己看到照片就能想起當時的感覺。</li>
+                                            </ul>
+                                            <a 
+                                                href="https://calendar.google.com/" 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                className="mt-3 flex items-center justify-center gap-2 w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition-colors"
+                                            >
+                                                <ExternalLink size={12}/> 打開 Google Calendar
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    <button onClick={() => setShowPhilosophy(false)} className="mt-8 w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-bold text-sm transition-colors">
+                                        銘記在心 (ACKNOWLEDGED)
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                </div>
+            );
+        };
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
