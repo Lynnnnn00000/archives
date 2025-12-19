@@ -97,7 +97,7 @@
         // =================================================================================
         
         const myFirebaseConfig = {
-  apiKey: "AIzaSyAgNktz8JUCOglOtB-zyle-FSfIV0TbVRc",
+ apiKey: "AIzaSyAgNktz8JUCOglOtB-zyle-FSfIV0TbVRc",
   authDomain: "blackbox-48253.firebaseapp.com",
   projectId: "blackbox-48253",
   storageBucket: "blackbox-48253.firebasestorage.app",
@@ -150,33 +150,6 @@
             love: { label: '情感時刻', icon: Heart, color: 'text-rose-400', border: 'border-rose-500/30', bg: 'bg-rose-500/10' }
         };
 
-        const FUNNEL_STEPS = [
-            {
-                layer: "第一層：麵包屑 (Breadcrumbs)",
-                tool: "Google Calendar / Waypoints",
-                color: "slate",
-                action: "日常隨手記",
-                content: "關鍵字、地點、照片",
-                purpose: "留下線索，不讓記憶憑空消失"
-            },
-            {
-                layer: "第二層：策展與萃取 (Curation)",
-                tool: "Life Archives",
-                color: "indigo",
-                action: "每季一次，打開第一層回顧",
-                content: "挑選 3-5 個「定義這段時間」的精華事件",
-                purpose: "賦予意義，封存記憶"
-            },
-            {
-                layer: "第三層：銷毀與放下 (Release)",
-                tool: "Trash Can",
-                color: "rose",
-                action: "確認存入後，丟掉舊筆記",
-                content: "物理銷毀或數位封存",
-                purpose: "輕量化人生，專注當下飛行"
-            }
-        ];
-
         const App = () => {
             const [user, setUser] = useState(null);
             const [archives, setArchives] = useState([]);
@@ -185,7 +158,7 @@
             // UI States
             const [isAdding, setIsAdding] = useState(false);
             const [showPhilosophy, setShowPhilosophy] = useState(false); 
-            const [philosophyTab, setPhilosophyTab] = useState('protocol'); // 'protocol' | 'architecture'
+            const [philosophyTab, setPhilosophyTab] = useState('protocol'); // 'protocol' | 'architecture' | 'relationship'
             
             // Input States
             const [newTitle, setNewTitle] = useState('');
@@ -538,8 +511,8 @@
                                 </div>
                                 
                                 <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
-                                    {philosophyTab === 'protocol' ? (
-                                        <div className="space-y-6 text-left">
+                                    {philosophyTab === 'protocol' && (
+                                        <div className="space-y-6 text-left animate-in fade-in">
                                             {/* Core Philosophy */}
                                             <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
                                                 <h3 className="text-emerald-400 font-bold text-sm mb-2">核心理念</h3>
@@ -580,26 +553,68 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    ) : (
-                                        <div className="space-y-6 text-left">
+                                    )}
+
+                                    {philosophyTab === 'architecture' && (
+                                        <div className="space-y-6 text-left animate-in fade-in">
                                             {/* Architecture Analysis Table */}
                                             <div className="overflow-hidden rounded-xl border border-slate-700">
                                                 <table className="w-full text-xs text-left">
                                                     <thead className="bg-slate-800 text-slate-400">
                                                         <tr>
                                                             <th className="p-3">特徵</th>
-                                                            <th className="p-3 text-emerald-400">航行日誌 (Waypoints)</th>
-                                                            <th className="p-3 text-indigo-400">生命檔案館 (Life Archives)</th>
+                                                            <th className="p-3 text-emerald-400">航行日誌</th>
+                                                            <th className="p-3 text-indigo-400">生命檔案館</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody className="divide-y divide-slate-800 bg-slate-900/50 text-slate-300">
-                                                        <tr><td className="p-3 font-bold text-slate-500">比喻</td><td className="p-3">儀表板便利貼</td><td className="p-3">博物館展品</td></tr>
-                                                        <tr><td className="p-3 font-bold text-slate-500">視角</td><td className="p-3">飛行員 (Pilot)</td><td className="p-3">策展人 (Curator)</td></tr>
-                                                        <tr><td className="p-3 font-bold text-slate-500">頻率</td><td className="p-3">高頻 (隨時)</td><td className="p-3">低頻 (每季/年)</td></tr>
-                                                        <tr><td className="p-3 font-bold text-slate-500">長度</td><td className="p-3">短 (關鍵字)</td><td className="p-3">長 (故事/脈絡)</td></tr>
-                                                        <tr><td className="p-3 font-bold text-slate-500">用途</td><td className="p-3">導航：下一步？</td><td className="p-3">定位：我從哪來？</td></tr>
+                                                        <tr><td className="p-3 font-bold text-slate-500">比喻</td><td className="p-3">便利貼</td><td className="p-3">展覽品</td></tr>
+                                                        <tr><td className="p-3 font-bold text-slate-500">視角</td><td className="p-3">飛行員</td><td className="p-3">策展人</td></tr>
+                                                        <tr><td className="p-3 font-bold text-slate-500">頻率</td><td className="p-3">高頻 (隨時)</td><td className="p-3">低頻 (每季)</td></tr>
+                                                        <tr><td className="p-3 font-bold text-slate-500">長度</td><td className="p-3">短 (關鍵字)</td><td className="p-3">長 (故事)</td></tr>
+                                                        <tr><td className="p-3 font-bold text-slate-500">用途</td><td className="p-3">導航</td><td className="p-3">定位</td></tr>
                                                     </tbody>
                                                 </table>
+                                            </div>
+
+                                            {/* Unified Funnel Logic (Including Duo Mode) */}
+                                            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+                                                <h3 className="text-emerald-400 font-bold text-sm mb-3 flex items-center gap-2">
+                                                    <GitMerge size={14}/> 通用漏斗邏輯 (Universal Funnel)
+                                                </h3>
+                                                <p className="text-xs text-slate-300 mb-4 leading-relaxed">
+                                                    無論是日常瑣事、戀愛點滴還是旅行見聞，處理的邏輯是一致的：<strong>先捕捉碎片，再萃取意義。</strong>
+                                                </p>
+                                                
+                                                {/* Scenario Matrix */}
+                                                <div className="overflow-hidden rounded-lg border border-slate-600">
+                                                    <table className="w-full text-xs text-left">
+                                                        <thead className="bg-slate-700 text-slate-300">
+                                                            <tr>
+                                                                <th className="p-2">情境</th>
+                                                                <th className="p-2">第一層：捕捉 (當下)</th>
+                                                                <th className="p-2">第二層：策展 (回顧)</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody className="divide-y divide-slate-700 bg-slate-800 text-slate-400">
+                                                            <tr>
+                                                                <td className="p-2 font-bold text-slate-300">日常</td>
+                                                                <td className="p-2">Google Calendar (關鍵字)</td>
+                                                                <td className="p-2">人生大事 / 階段總結</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td className="p-2 font-bold text-rose-300">戀愛</td>
+                                                                <td className="p-2">航行日誌 (糖果罐)</td>
+                                                                <td className="p-2">愛情故事 (共同歷史)</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td className="p-2 font-bold text-indigo-300">旅遊</td>
+                                                                <td className="p-2">航行日誌 (打卡點)</td>
+                                                                <td className="p-2">旅行回憶錄 (意義)</td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
                                             </div>
 
                                             {/* Usage Scenarios */}
@@ -614,7 +629,57 @@
                                                 </ul>
                                             </div>
 
-                                            {/* Execution Strategy Funnel (NEW) */}
+                                            {/* Duo Mode Warm Description (Integrated Here) */}
+                                            <div className="bg-rose-900/10 p-5 rounded-xl border border-rose-500/20 mt-4">
+                                                <h3 className="text-rose-400 font-bold text-sm mb-3 flex items-center gap-2">
+                                                    <Heart size={16}/> 推薦的情侶工作流
+                                                </h3>
+                                                
+                                                <p className="text-xs text-slate-300 mb-6 italic leading-relaxed">
+                                                    「不要讓紀錄變成壓力。這是為了儲存溫柔，而不是交作業。」
+                                                </p>
+
+                                                <div className="space-y-6">
+                                                    {/* Daily */}
+                                                    <div className="relative pl-4 border-l-2 border-rose-500/30">
+                                                        <div className="absolute -left-[5px] top-0 w-2.5 h-2.5 rounded-full bg-rose-500"></div>
+                                                        <h4 className="text-xs font-bold text-rose-300 mb-1">日常 (Daily)：捕捉小確幸</h4>
+                                                        <p className="text-xs text-slate-400 leading-relaxed">
+                                                            發生任何讓你嘴角上揚的小事（這只需要 30 秒）。<br/>
+                                                            <span className="text-rose-400/80">👉 記在「航行日誌 (Love Beacons)」或手機隨手拍。</span>
+                                                        </p>
+                                                    </div>
+
+                                                    {/* Event-based */}
+                                                    <div className="relative pl-4 border-l-2 border-indigo-500/30">
+                                                        <div className="absolute -left-[5px] top-0 w-2.5 h-2.5 rounded-full bg-indigo-500"></div>
+                                                        <h4 className="text-xs font-bold text-indigo-300 mb-1">特殊事件 (Event)：共同的歷史</h4>
+                                                        <p className="text-xs text-slate-400 leading-relaxed">
+                                                            剛結束一趟很棒的旅行？挑選 3 張最精華的照片，寫下這次旅行對你們的意義（例如：「發現我們很適合一起生活」）。<br/>
+                                                            <span className="text-indigo-400/80">👉 打開「生命檔案館」新增 Travel 檔案。</span>
+                                                        </p>
+                                                    </div>
+
+                                                    {/* Review */}
+                                                    <div className="relative pl-4 border-l-2 border-amber-500/30">
+                                                        <div className="absolute -left-[5px] top-0 w-2.5 h-2.5 rounded-full bg-amber-500"></div>
+                                                        <h4 className="text-xs font-bold text-amber-300 mb-1">回顧 (Review)：溫柔的總結</h4>
+                                                        <p className="text-xs text-slate-400 leading-relaxed">
+                                                            每季或每年，打開「航行日誌」看看那些累積的小事（剝蝦、吹頭髮）。妳會感受到一股暖流。<br/>
+                                                            <span className="text-amber-400/80">👉 在檔案館寫下一篇 Love 總結：「2024年，謝謝你一直以來的溫柔。」</span>
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="mt-6 p-3 bg-slate-900/50 rounded border border-rose-500/10 text-center">
+                                                    <p className="text-[10px] text-slate-400">
+                                                        相處點滴 (小事) 👉 <span className="text-rose-300">當下的養分</span><br/>
+                                                        旅遊日誌 (大事) 👉 <span className="text-indigo-300">共同的歷史</span>
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* Execution Strategy Funnel */}
                                             <div className="space-y-3 mt-4">
                                                 {[
                                                     {layer: "第一層：麵包屑 (Breadcrumbs)", tool: "Google Calendar / Waypoints", color: "slate", action: "日常隨手記", content: "關鍵字、地點、照片", purpose: "留下線索，不讓記憶憑空消失"},
