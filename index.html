@@ -103,56 +103,20 @@
         // --- Settings Modal ---
         const SettingsModal = ({ onClose }) => {
             const [configInput, setConfigInput] = useState('');
-            
             useEffect(() => {
                 const stored = localStorage.getItem('custom_firebase_config');
                 if (stored) setConfigInput(stored);
             }, []);
-
             const handleSave = () => {
                 try {
-                    const input = configInput.trim();
-                    if (!input) {
-                        localStorage.removeItem('custom_firebase_config');
-                        alert("設定已清除！重啟中...");
-                        window.location.reload();
-                        return;
-                    }
-
-                    let parsed;
-                    try {
-                        // 1. 嘗試解析標準 JSON
-                        parsed = JSON.parse(input);
-                    } catch (jsonError) {
-                        try {
-                            // 2. 如果失敗，嘗試解析 JS Object (容錯處理)
-                            // 檢查是否缺少外層括號
-                            let jsInput = input;
-                            if (!jsInput.startsWith('{')) {
-                                jsInput = '{' + jsInput + '}';
-                            }
-                            // 使用 Function 建構式來解析物件字面量 (比 eval 安全一點點，但在這裡主要為了方便用戶複製貼上)
-                            parsed = new Function('return ' + jsInput)();
-                        } catch (jsError) {
-                            throw new Error("無法解析設定。請確認您貼上的是正確的 Firebase Config (JSON 或 JS Object)。");
-                        }
-                    }
-
-                    // 簡單驗證
-                    if (!parsed || !parsed.apiKey) throw new Error("設定無效：找不到 apiKey");
-
-                    localStorage.setItem('custom_firebase_config', JSON.stringify(parsed));
-                    alert("設定已儲存！重啟中..."); 
-                    window.location.reload();
-                } catch (e) { 
-                    alert("錯誤: " + e.message); 
-                }
+                    if (!configInput.trim()) localStorage.removeItem('custom_firebase_config');
+                    else localStorage.setItem('custom_firebase_config', JSON.stringify(JSON.parse(configInput)));
+                    alert("設定已儲存！重啟中..."); window.location.reload();
+                } catch (e) { alert("JSON 格式錯誤"); }
             };
-
             const handleReset = () => {
-                if(confirm("確定重置為預設資料庫嗎？")) { localStorage.removeItem('custom_firebase_config'); window.location.reload(); }
+                if(confirm("確定重置？")) { localStorage.removeItem('custom_firebase_config'); window.location.reload(); }
             };
-
             return (
                 <div className="fixed inset-0 z-[110] bg-slate-950/95 backdrop-blur flex flex-col items-center justify-center p-6 animate-fade-in">
                     <div className="bg-slate-900 border border-slate-800 rounded-xl w-full max-w-md p-6 shadow-2xl">
@@ -161,9 +125,8 @@
                             <button onClick={onClose}><X size={20} className="text-slate-500 hover:text-white"/></button>
                         </div>
                         <div className="mb-6">
-                            <label className="text-xs font-bold text-slate-400 mb-2 block">Firebase Configuration</label>
-                            <p className="text-[10px] text-slate-500 mb-2">支援直接貼上 Firebase Console 的 JS Config 代碼。</p>
-                            <textarea value={configInput} onChange={e => setConfigInput(e.target.value)} className="w-full h-32 bg-slate-950 border border-slate-700 rounded p-3 text-xs font-mono text-slate-300 focus:outline-none focus:border-cyan-500" placeholder='apiKey: "AIza...", ...' />
+                            <label className="text-xs font-bold text-slate-400 mb-2 block">Firebase Configuration (JSON)</label>
+                            <textarea value={configInput} onChange={e => setConfigInput(e.target.value)} className="w-full h-32 bg-slate-950 border border-slate-700 rounded p-3 text-xs font-mono text-slate-300 focus:outline-none focus:border-cyan-500" placeholder='{"apiKey": "AIza...", ...}' />
                         </div>
                         <div className="flex gap-3">
                             <button onClick={handleReset} className="flex-1 py-2 text-xs font-bold text-rose-400 border border-rose-500/30 rounded hover:bg-rose-500/10">重置</button>
@@ -174,7 +137,7 @@
             );
         };
 
-        // --- System Manual (Optimized Version) ---
+        // --- System Manual (Integrated Version) ---
         const SystemManual = ({ onClose }) => {
             const [tab, setTab] = useState('core');
             return (
@@ -191,7 +154,6 @@
                     <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
                         {tab === 'core' && (
                             <div className="space-y-8 max-w-2xl mx-auto animate-slide-up">
-                                {/* 1. The Funnel */}
                                 <div>
                                     <div className="text-center mb-6">
                                         <h3 className="text-xl font-bold text-white mb-2">單一入口，雙向出口</h3>
@@ -204,39 +166,20 @@
                                         </p>
                                     </div>
                                 </div>
-
-                                {/* 2. The Logic & Split */}
                                 <div className="flex flex-col md:flex-row gap-4 mb-6">
-                                    {/* Left Brain: Black Box */}
                                     <div className="flex-1 bg-rose-950/20 border border-rose-900/30 p-5 rounded-xl flex flex-col">
                                         <div className="flex items-center gap-3 mb-3 text-rose-400"><BrainCircuit size={20} /><h4 className="font-bold">左腦：黑盒子</h4></div>
                                         <p className="text-xs text-rose-200/70 leading-relaxed mb-4">
                                             處理<strong>「負向訊號」</strong>。這裡是為了<strong className="text-rose-400">除錯 (Debug)</strong>。我們記錄痛苦不是為了反芻，而是為了找出 Pattern，然後消滅它。
                                         </p>
-                                        
-                                        {/* Internal Logic Moved Here */}
                                         <div className="mt-auto bg-slate-950/50 rounded-lg p-3 border border-rose-500/10">
                                             <div className="text-[10px] font-bold text-slate-500 mb-2 uppercase tracking-wide">專屬機制</div>
                                             <div className="space-y-3">
-                                                <div className="flex gap-2">
-                                                    <Activity size={14} className="text-rose-400 shrink-0 mt-0.5"/>
-                                                    <div>
-                                                        <span className="text-rose-400 text-xs font-bold block">RECURRED (再發)</span>
-                                                        <span className="text-[10px] text-slate-400">計數器。只有當壞事<strong className="text-slate-200">真的發生</strong>時才按。</span>
-                                                    </div>
-                                                </div>
-                                                <div className="flex gap-2">
-                                                    <StickyNote size={14} className="text-indigo-400 shrink-0 mt-0.5"/>
-                                                    <div>
-                                                        <span className="text-indigo-400 text-xs font-bold block">MEMO (筆記)</span>
-                                                        <span className="text-[10px] text-slate-400">戰術板。思考對策時使用，<strong className="text-slate-200">不增加計數</strong>。</span>
-                                                    </div>
-                                                </div>
+                                                <div className="flex gap-2"><Activity size={14} className="text-rose-400 shrink-0 mt-0.5"/><div><span className="text-rose-400 text-xs font-bold block">RECURRED (再發)</span><span className="text-[10px] text-slate-400">計數器。只有當壞事<strong className="text-slate-200">真的發生</strong>時才按。</span></div></div>
+                                                <div className="flex gap-2"><StickyNote size={14} className="text-indigo-400 shrink-0 mt-0.5"/><div><span className="text-indigo-400 text-xs font-bold block">MEMO (筆記)</span><span className="text-[10px] text-slate-400">戰術板。思考對策時使用，<strong className="text-slate-200">不增加計數</strong>。</span></div></div>
                                             </div>
                                         </div>
                                     </div>
-
-                                    {/* Right Brain: Archive */}
                                     <div className="flex-1 bg-emerald-950/20 border border-emerald-900/30 p-5 rounded-xl">
                                         <div className="flex items-center gap-3 mb-3 text-emerald-400"><Archive size={20} /><h4 className="font-bold">右腦：檔案館</h4></div>
                                         <p className="text-xs text-emerald-200/70 leading-relaxed">
@@ -251,55 +194,17 @@
                                 <div className="p-5 rounded-xl border border-rose-900/30 bg-rose-950/10">
                                     <h3 className="text-rose-400 font-bold mb-4 flex items-center gap-2"><BrainCircuit size={18}/> 黑盒子操作指引</h3>
                                     <ul className="space-y-4 text-sm text-slate-300">
-                                        <li className="flex gap-3">
-                                            <span className="bg-rose-900/50 text-rose-300 w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold shrink-0">1</span>
-                                            <div>
-                                                <strong className="text-white block mb-1">捕捉 (Capture)</strong>
-                                                記錄任何讓您感到「卡卡的」事情。例如：「開會時被插嘴，覺得不受尊重」。
-                                            </div>
-                                        </li>
-                                        <li className="flex gap-3">
-                                            <span className="bg-rose-900/50 text-rose-300 w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold shrink-0">2</span>
-                                            <div>
-                                                <strong className="text-white block mb-1">計數 (Count)</strong>
-                                                如果同樣的事情再次發生，點擊 <span className="text-rose-400 border border-rose-700 px-1 rounded text-[10px]">RECURRED</span>。
-                                                <br/><span className="text-rose-400 text-xs">原則：發生一次是意外，發生三次就是模式。</span>
-                                            </div>
-                                        </li>
-                                        <li className="flex gap-3">
-                                            <span className="bg-rose-900/50 text-rose-300 w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold shrink-0">3</span>
-                                            <div>
-                                                <strong className="text-white block mb-1">轉化 (Transform)</strong>
-                                                當您找到解決方法（或決定設下界線），點擊 <span className="text-emerald-500 border border-emerald-500/30 px-1 rounded text-[10px]">✅ SOLVED</span>。它會變成一條永久的「協議 (Protocol)」，並儲存在黑盒子底部的列表中，作為您的人生智慧庫。
-                                            </div>
-                                        </li>
+                                        <li className="flex gap-3"><span className="text-rose-400 font-bold">1.</span> <div><strong>捕捉 (Capture)</strong>：卡卡就記。</div></li>
+                                        <li className="flex gap-3"><span className="text-rose-400 font-bold">2.</span> <div><strong>計數 (Count)</strong>：發生就按 <span className="text-rose-400 border border-rose-700 px-1 rounded text-[10px] bg-rose-900/20">RECURRED</span>。</div></li>
+                                        <li className="flex gap-3"><span className="text-rose-400 font-bold">3.</span> <div><strong>轉化 (Solve)</strong>：解決就按 <span className="text-emerald-500 border border-emerald-500/30 px-1 rounded text-[10px] bg-emerald-900/20">✅ SOLVED</span>。</div></li>
                                     </ul>
                                 </div>
-
                                 <div className="p-5 rounded-xl border border-emerald-900/30 bg-emerald-950/10">
                                     <h3 className="text-emerald-400 font-bold mb-4 flex items-center gap-2"><Archive size={18}/> 檔案館操作指引</h3>
                                     <ul className="space-y-4 text-sm text-slate-300">
-                                        <li className="flex gap-3">
-                                            <span className="bg-emerald-900/50 text-emerald-300 w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold shrink-0">1</span>
-                                            <div>
-                                                <strong className="text-white block mb-1">收集麵包屑 (Breadcrumbs)</strong>
-                                                不需要寫長篇日記。只要記下「關鍵字」或「一句話」。例如：「今天在藍瓶咖啡，陽光很好。」
-                                            </div>
-                                        </li>
-                                        <li className="flex gap-3">
-                                            <span className="bg-emerald-900/50 text-emerald-300 w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold shrink-0">2</span>
-                                            <div>
-                                                <strong className="text-white block mb-1">反芻與更新 (Retrospective)</strong>
-                                                當您回顧舊回憶有新想法時，不需要修改原文，而是使用「反芻」功能，在下方添加新的觀點（如：「現在看當時的挫折，其實是轉機」）。
-                                            </div>
-                                        </li>
-                                        <li className="flex gap-3">
-                                            <span className="bg-emerald-900/50 text-emerald-300 w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold shrink-0">3</span>
-                                            <div>
-                                                <strong className="text-white block mb-1">季度策展 (Curate)</strong>
-                                                不只是瀏覽，而是「連結」。每季一次，試著找出這段時間的共同主題（例如：都是關於冒險），並新增一篇「里程碑」作為這一季的總結。這能讓零散的麵包屑變成有意義的人生章節。
-                                            </div>
-                                        </li>
+                                        <li className="flex gap-3"><span className="text-emerald-400 font-bold">1.</span> <div><strong>收集 (Breadcrumbs)</strong>：記下關鍵字。</div></li>
+                                        <li className="flex gap-3"><span className="text-emerald-400 font-bold">2.</span> <div><strong>反芻 (Reflect)</strong>：隨時補充新觀點。</div></li>
+                                        <li className="flex gap-3"><span className="text-emerald-400 font-bold">3.</span> <div><strong>策展 (Curate)</strong>：每季連點成線，總結里程碑。</div></li>
                                     </ul>
                                 </div>
                             </div>
@@ -308,42 +213,15 @@
                             <div className="space-y-6 max-w-2xl mx-auto animate-slide-up">
                                 <div className="bg-amber-500/10 border border-amber-500/20 p-5 rounded-xl">
                                     <h3 className="text-amber-400 font-bold mb-3 flex items-center gap-2"><HelpCircle size={18}/> 案例一：老闆畫餅</h3>
-                                    <p className="text-sm text-slate-300 mb-4">
-                                        Q: 「老闆說有新案子，如果說了很多次但都沒發生，我自己要想應對方法；但如果真的有發生又該怎麼記錄呢？」
-                                    </p>
-                                    <div className="space-y-4">
-                                        <div className="bg-slate-900/50 p-3 rounded border border-rose-500/20">
-                                            <div className="text-rose-400 text-xs font-bold mb-1">🔴 情況 A：畫餅未實現 (負向循環)</div>
-                                            <p className="text-xs text-slate-400">
-                                                這是系統 Bug。在黑盒子記下「老闆承諾新案子」，每次他說但沒做，點擊 <span className="text-rose-400 font-bold">RECURRED</span>。累積三次後，系統會提醒您分析並制定 Protocol (例如：不再輕信口頭承諾，要求白紙黑字)。
-                                            </p>
-                                        </div>
-                                        <div className="bg-slate-900/50 p-3 rounded border border-emerald-500/20">
-                                            <div className="text-emerald-400 text-xs font-bold mb-1">🟢 情況 B：真的實現了 (正向結果)</div>
-                                            <p className="text-xs text-slate-400">
-                                                這是已驗證的 Feature。在黑盒子點擊 <span className="text-emerald-400 font-bold">✅ SOLVED</span>，將此模式轉化為 Protocol (例如：老闆的承諾是可信的)。<br/>
-                                                同時，因為這是一件好事，您可以切換到<strong className="text-emerald-400">檔案館</strong>，記下一筆「拿到新案子了」作為<strong className="text-amber-400">里程碑</strong>。
-                                            </p>
-                                        </div>
+                                    <p className="text-sm text-slate-300 mb-4">Q: 「老闆說有新案子，如果說了很多次但都沒發生，我自己要想應對方法；但如果真的有發生又該怎麼記錄呢？」</p>
+                                    <div className="space-y-2 text-sm text-slate-300">
+                                        <div className="p-2 border-l-2 border-rose-500 pl-3">🔴 <strong>沒實現 (Bug)：</strong> 屬於黑盒子。每次沒實現就點 <span className="text-rose-400 font-bold">RECURRED</span>。</div>
+                                        <div className="p-2 border-l-2 border-emerald-500 pl-3">🟢 <strong>實現了 (Feature)：</strong> 屬於黑盒子 <span className="text-emerald-400 font-bold">SOLVED</span> (驗證成功) + 檔案館 <strong className="text-emerald-400">里程碑</strong> (慶祝)。</div>
                                     </div>
                                 </div>
-
                                 <div className="bg-indigo-500/10 border border-indigo-500/20 p-5 rounded-xl">
                                     <h3 className="text-indigo-400 font-bold mb-3 flex items-center gap-2"><HelpCircle size={18}/> 案例二：紙本筆記</h3>
-                                    <p className="text-sm text-slate-300 mb-4">
-                                        Q: 「那如果是以前的紙本筆記呢，我應該要怎麼整理呢？」
-                                    </p>
-                                    <div className="space-y-2">
-                                        <p className="text-xs text-slate-400 leading-relaxed">
-                                            <strong className="text-white">1. 翻閱與感受：</strong> 快速翻閱舊筆記。
-                                        </p>
-                                        <p className="text-xs text-slate-400 leading-relaxed">
-                                            <strong className="text-white">2. 萃取 (Extract)：</strong> 只有那些「現在看還有感覺」或「不想忘記」的內容才需要留。將它們輸入進<strong className="text-emerald-400">檔案館</strong>，<strong className="text-amber-400">記得將日期設定為當年的時間</strong>。
-                                        </p>
-                                        <p className="text-xs text-slate-400 leading-relaxed">
-                                            <strong className="text-white">3. 銷毀 (Destroy)：</strong> 確認數位化後，果斷丟棄紙本。檔案館是精華區，不是倉庫；紙本佔據的空間應該留給未來。
-                                        </p>
-                                    </div>
+                                    <p className="text-xs text-slate-400 leading-relaxed">1. 翻閱。 2. 萃取精華入<strong className="text-emerald-400">檔案館</strong>（記得調日期）。 3. 銷毀紙本。</p>
                                 </div>
                             </div>
                         )}
@@ -488,7 +366,7 @@
                                 <div className="flex gap-2 mt-3">
                                     <button onClick={() => handleInteraction(p.id, 'solve')} className={`flex-1 py-2 rounded text-[10px] font-bold border transition-colors ${interactionType === 'solve' && interactingId === p.id ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/20'}`}>✅ SOLVED</button>
                                     <button onClick={() => handleInteraction(p.id, 'memo')} className={`flex-1 py-2 rounded text-[10px] font-bold border transition-colors ${interactionType === 'memo' && interactingId === p.id ? 'bg-indigo-500 text-white border-indigo-500' : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20 hover:bg-indigo-500/20'}`}>📝 MEMO</button>
-                                    <button onClick={() => handleInteraction(p.id, 'recur')} className={`flex-1 py-2 rounded text-[10px] font-bold border transition-colors ${interactionType === 'recur' && interactingId === p.id ? 'bg-rose-900/30 text-rose-300 border-rose-800' : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'}`}>RECURRED (+1)</button>
+                                    <button onClick={() => handleInteraction(p.id, 'recur')} className={`flex-1 py-2 rounded text-[10px] font-bold border transition-colors ${interactionType === 'recur' && interactingId === p.id ? 'bg-rose-500 text-white border-rose-500' : 'bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20'}`}>RECURRED (+1)</button>
                                 </div>
                                 {interactingId === p.id && (
                                     <div className="mt-3 pt-3 border-t border-slate-700/50 animate-fade-in bg-slate-950/30 -mx-2 px-2 pb-2 rounded">
