@@ -103,20 +103,56 @@
         // --- Settings Modal ---
         const SettingsModal = ({ onClose }) => {
             const [configInput, setConfigInput] = useState('');
+            
             useEffect(() => {
                 const stored = localStorage.getItem('custom_firebase_config');
                 if (stored) setConfigInput(stored);
             }, []);
+
             const handleSave = () => {
                 try {
-                    if (!configInput.trim()) localStorage.removeItem('custom_firebase_config');
-                    else localStorage.setItem('custom_firebase_config', JSON.stringify(JSON.parse(configInput)));
-                    alert("設定已儲存！重啟中..."); window.location.reload();
-                } catch (e) { alert("JSON 格式錯誤"); }
+                    const input = configInput.trim();
+                    if (!input) {
+                        localStorage.removeItem('custom_firebase_config');
+                        alert("設定已清除！重啟中...");
+                        window.location.reload();
+                        return;
+                    }
+
+                    let parsed;
+                    try {
+                        // 1. 嘗試解析標準 JSON
+                        parsed = JSON.parse(input);
+                    } catch (jsonError) {
+                        try {
+                            // 2. 如果失敗，嘗試解析 JS Object (容錯處理)
+                            // 檢查是否缺少外層括號
+                            let jsInput = input;
+                            if (!jsInput.startsWith('{')) {
+                                jsInput = '{' + jsInput + '}';
+                            }
+                            // 使用 Function 建構式來解析物件字面量 (比 eval 安全一點點，但在這裡主要為了方便用戶複製貼上)
+                            parsed = new Function('return ' + jsInput)();
+                        } catch (jsError) {
+                            throw new Error("無法解析設定。請確認您貼上的是正確的 Firebase Config (JSON 或 JS Object)。");
+                        }
+                    }
+
+                    // 簡單驗證
+                    if (!parsed || !parsed.apiKey) throw new Error("設定無效：找不到 apiKey");
+
+                    localStorage.setItem('custom_firebase_config', JSON.stringify(parsed));
+                    alert("設定已儲存！重啟中..."); 
+                    window.location.reload();
+                } catch (e) { 
+                    alert("錯誤: " + e.message); 
+                }
             };
+
             const handleReset = () => {
-                if(confirm("確定重置？")) { localStorage.removeItem('custom_firebase_config'); window.location.reload(); }
+                if(confirm("確定重置為預設資料庫嗎？")) { localStorage.removeItem('custom_firebase_config'); window.location.reload(); }
             };
+
             return (
                 <div className="fixed inset-0 z-[110] bg-slate-950/95 backdrop-blur flex flex-col items-center justify-center p-6 animate-fade-in">
                     <div className="bg-slate-900 border border-slate-800 rounded-xl w-full max-w-md p-6 shadow-2xl">
@@ -125,8 +161,9 @@
                             <button onClick={onClose}><X size={20} className="text-slate-500 hover:text-white"/></button>
                         </div>
                         <div className="mb-6">
-                            <label className="text-xs font-bold text-slate-400 mb-2 block">Firebase Configuration (JSON)</label>
-                            <textarea value={configInput} onChange={e => setConfigInput(e.target.value)} className="w-full h-32 bg-slate-950 border border-slate-700 rounded p-3 text-xs font-mono text-slate-300 focus:outline-none focus:border-cyan-500" placeholder='{"apiKey": "AIza...", ...}' />
+                            <label className="text-xs font-bold text-slate-400 mb-2 block">Firebase Configuration</label>
+                            <p className="text-[10px] text-slate-500 mb-2">支援直接貼上 Firebase Console 的 JS Config 代碼。</p>
+                            <textarea value={configInput} onChange={e => setConfigInput(e.target.value)} className="w-full h-32 bg-slate-950 border border-slate-700 rounded p-3 text-xs font-mono text-slate-300 focus:outline-none focus:border-cyan-500" placeholder='apiKey: "AIza...", ...' />
                         </div>
                         <div className="flex gap-3">
                             <button onClick={handleReset} className="flex-1 py-2 text-xs font-bold text-rose-400 border border-rose-500/30 rounded hover:bg-rose-500/10">重置</button>
