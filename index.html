@@ -63,12 +63,12 @@
             ArrowRight, Sparkles, Loader2, AlertTriangle, CheckCircle, X,
             BookOpen, Eye, LogIn, LogOut, Settings, History, MapPin, 
             Calendar, Star, Globe, Heart, Book, LayoutGrid, Radio, Hexagon,
-            GitMerge, GitCompare, Info, MessageSquare, HelpCircle, User, Cloud, Save, RefreshCw, PenTool, StickyNote, CornerDownLeft, Coffee
+            GitMerge, GitCompare, Info, MessageSquare, HelpCircle, User, Cloud, Save, RefreshCw, PenTool, StickyNote, CornerDownLeft, Coffee, Compass, Lightbulb, Library, Landmark, Youtube
         } from 'lucide-react';
         
         import { initializeApp } from 'firebase/app';
         import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, signInWithCustomToken, signInAnonymously } from 'firebase/auth';
-        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, serverTimestamp, query, orderBy, where } from 'firebase/firestore';
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, setDoc, onSnapshot, serverTimestamp, query, orderBy, where } from 'firebase/firestore';
 
         // --- Firebase Configuration Logic ---
         const DEFAULT_CONFIG = {
@@ -137,7 +137,7 @@
             );
         };
 
-        // --- System Manual (Integrated Version) ---
+        // --- System Manual (Full Detailed Version) ---
         const SystemManual = ({ onClose }) => {
             const [tab, setTab] = useState('core');
             return (
@@ -154,6 +154,7 @@
                     <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
                         {tab === 'core' && (
                             <div className="space-y-8 max-w-2xl mx-auto animate-slide-up">
+                                {/* 1. The Funnel */}
                                 <div>
                                     <div className="text-center mb-6">
                                         <h3 className="text-xl font-bold text-white mb-2">單一入口，雙向出口</h3>
@@ -166,20 +167,39 @@
                                         </p>
                                     </div>
                                 </div>
+
+                                {/* 2. The Logic & Split */}
                                 <div className="flex flex-col md:flex-row gap-4 mb-6">
+                                    {/* Left Brain: Black Box */}
                                     <div className="flex-1 bg-rose-950/20 border border-rose-900/30 p-5 rounded-xl flex flex-col">
                                         <div className="flex items-center gap-3 mb-3 text-rose-400"><BrainCircuit size={20} /><h4 className="font-bold">左腦：黑盒子</h4></div>
                                         <p className="text-xs text-rose-200/70 leading-relaxed mb-4">
                                             處理<strong>「負向訊號」</strong>。這裡是為了<strong className="text-rose-400">除錯 (Debug)</strong>。我們記錄痛苦不是為了反芻，而是為了找出 Pattern，然後消滅它。
                                         </p>
+                                        
+                                        {/* Internal Logic Moved Here */}
                                         <div className="mt-auto bg-slate-950/50 rounded-lg p-3 border border-rose-500/10">
                                             <div className="text-[10px] font-bold text-slate-500 mb-2 uppercase tracking-wide">專屬機制</div>
                                             <div className="space-y-3">
-                                                <div className="flex gap-2"><Activity size={14} className="text-rose-400 shrink-0 mt-0.5"/><div><span className="text-rose-400 text-xs font-bold block">RECURRED (再發)</span><span className="text-[10px] text-slate-400">計數器。只有當壞事<strong className="text-slate-200">真的發生</strong>時才按。</span></div></div>
-                                                <div className="flex gap-2"><StickyNote size={14} className="text-indigo-400 shrink-0 mt-0.5"/><div><span className="text-indigo-400 text-xs font-bold block">MEMO (筆記)</span><span className="text-[10px] text-slate-400">戰術板。思考對策時使用，<strong className="text-slate-200">不增加計數</strong>。</span></div></div>
+                                                <div className="flex gap-2">
+                                                    <Activity size={14} className="text-rose-400 shrink-0 mt-0.5"/>
+                                                    <div>
+                                                        <span className="text-rose-400 text-xs font-bold block">RECURRED (再發)</span>
+                                                        <span className="text-[10px] text-slate-400">計數器。只有當壞事<strong className="text-slate-200">真的發生</strong>時才按。</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <StickyNote size={14} className="text-indigo-400 shrink-0 mt-0.5"/>
+                                                    <div>
+                                                        <span className="text-indigo-400 text-xs font-bold block">MEMO (筆記)</span>
+                                                        <span className="text-[10px] text-slate-400">戰術板。思考對策時使用，<strong className="text-slate-200">不增加計數</strong>。</span>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
+
+                                    {/* Right Brain: Archive */}
                                     <div className="flex-1 bg-emerald-950/20 border border-emerald-900/30 p-5 rounded-xl">
                                         <div className="flex items-center gap-3 mb-3 text-emerald-400"><Archive size={20} /><h4 className="font-bold">右腦：檔案館</h4></div>
                                         <p className="text-xs text-emerald-200/70 leading-relaxed">
@@ -194,17 +214,41 @@
                                 <div className="p-5 rounded-xl border border-rose-900/30 bg-rose-950/10">
                                     <h3 className="text-rose-400 font-bold mb-4 flex items-center gap-2"><BrainCircuit size={18}/> 黑盒子操作指引</h3>
                                     <ul className="space-y-4 text-sm text-slate-300">
-                                        <li className="flex gap-3"><span className="text-rose-400 font-bold">1.</span> <div><strong>捕捉 (Capture)</strong>：卡卡就記。</div></li>
-                                        <li className="flex gap-3"><span className="text-rose-400 font-bold">2.</span> <div><strong>計數 (Count)</strong>：發生就按 <span className="text-rose-400 border border-rose-700 px-1 rounded text-[10px] bg-rose-900/20">RECURRED</span>。</div></li>
-                                        <li className="flex gap-3"><span className="text-rose-400 font-bold">3.</span> <div><strong>轉化 (Solve)</strong>：解決就按 <span className="text-emerald-500 border border-emerald-500/30 px-1 rounded text-[10px] bg-emerald-900/20">✅ SOLVED</span>。</div></li>
+                                        <li className="flex gap-3"><span className="text-rose-400 font-bold">1.</span> <div><strong className="text-white block mb-1">捕捉 (Capture)</strong>記錄任何讓您感到「卡卡的」事情。例如：「開會時被插嘴，覺得不受尊重」。</div></li>
+                                        <li className="flex gap-3"><span className="text-rose-400 font-bold">2.</span> <div><strong className="text-white block mb-1">計數 (Count)</strong>如果同樣的事情再次發生，點擊 <span className="text-rose-400 border border-rose-700 px-1 rounded text-[10px] bg-rose-900/20">RECURRED</span>。原則：發生一次是意外，發生三次就是模式。</div></li>
+                                        <li className="flex gap-3"><span className="text-rose-400 font-bold">3.</span> <div><strong className="text-white block mb-1">轉化 (Solve)</strong>當您找到解決方法（或決定設下界線），點擊 <span className="text-emerald-500 border border-emerald-500/30 px-1 rounded text-[10px] bg-emerald-900/20">✅ SOLVED</span>。它會變成一條永久的「協議 (Protocol)」，並儲存在黑盒子底部的列表中，作為您的人生智慧庫。</div></li>
                                     </ul>
                                 </div>
+
                                 <div className="p-5 rounded-xl border border-emerald-900/30 bg-emerald-950/10">
-                                    <h3 className="text-emerald-400 font-bold mb-4 flex items-center gap-2"><Archive size={18}/> 檔案館操作指引</h3>
+                                    <h3 className="text-emerald-400 font-bold mb-4 flex items-center gap-2"><Archive size={18}/> 檔案館操作指引：雙核架構</h3>
+                                    
+                                    <div className="grid grid-cols-2 gap-0 mb-4 rounded-lg overflow-hidden border border-slate-700">
+                                        <div className="bg-emerald-900/20 p-3 text-center border-r border-slate-700">
+                                            <div className="flex justify-center mb-1 text-emerald-400"><Landmark size={18}/></div>
+                                            <h4 className="text-xs font-bold text-emerald-300 mb-1">博物館 (Museum)</h4>
+                                            <p className="text-[9px] text-slate-400">體驗 / 感性 / 有時間性</p>
+                                            <div className="mt-2 flex flex-wrap gap-1 justify-center">
+                                                <span className="text-[9px] border border-emerald-500/30 text-emerald-500 px-1 rounded">旅遊</span>
+                                                <span className="text-[9px] border border-rose-500/30 text-rose-500 px-1 rounded">情感</span>
+                                                <span className="text-[9px] border border-indigo-500/30 text-indigo-500 px-1 rounded">回憶</span>
+                                            </div>
+                                        </div>
+                                        <div className="bg-violet-900/20 p-3 text-center">
+                                            <div className="flex justify-center mb-1 text-violet-400"><Library size={18}/></div>
+                                            <h4 className="text-xs font-bold text-violet-300 mb-1">圖書館 (Library)</h4>
+                                            <p className="text-[9px] text-slate-400">知識 / 理性 / 永恆</p>
+                                            <div className="mt-2 flex flex-wrap gap-1 justify-center">
+                                                <span className="text-[9px] border border-violet-500/30 text-violet-500 px-1 rounded">洞見</span>
+                                                <span className="text-[9px] border border-amber-500/30 text-amber-500 px-1 rounded">里程碑</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <ul className="space-y-4 text-sm text-slate-300">
-                                        <li className="flex gap-3"><span className="text-emerald-400 font-bold">1.</span> <div><strong>收集 (Breadcrumbs)</strong>：記下關鍵字。</div></li>
-                                        <li className="flex gap-3"><span className="text-emerald-400 font-bold">2.</span> <div><strong>反芻 (Reflect)</strong>：隨時補充新觀點。</div></li>
-                                        <li className="flex gap-3"><span className="text-emerald-400 font-bold">3.</span> <div><strong>策展 (Curate)</strong>：每季連點成線，總結里程碑。</div></li>
+                                        <li className="flex gap-3"><span className="text-emerald-400 font-bold">1.</span> <div><strong className="text-white block mb-1">收集 (Breadcrumbs)</strong>不需要寫長篇日記。只要記下「關鍵字」或「一句話」。例如：「今天在藍瓶咖啡，陽光很好。」</div></li>
+                                        <li className="flex gap-3"><span className="text-emerald-400 font-bold">2.</span> <div><strong className="text-white block mb-1">反芻 (Reflect)</strong>當您回顧舊回憶有新想法時，不需要修改原文，而是使用「反芻」功能，在下方添加新的觀點（如：「現在看當時的挫折，其實是轉機」）。</div></li>
+                                        <li className="flex gap-3"><span className="text-emerald-400 font-bold">3.</span> <div><strong className="text-white block mb-1">策展 (Curate)</strong>每過一段時間（如三個月），打開檔案館瀏覽。這些點點滴滴會連成線，讓您看到自己成長的軌跡。</div></li>
                                     </ul>
                                 </div>
                             </div>
@@ -213,15 +257,46 @@
                             <div className="space-y-6 max-w-2xl mx-auto animate-slide-up">
                                 <div className="bg-amber-500/10 border border-amber-500/20 p-5 rounded-xl">
                                     <h3 className="text-amber-400 font-bold mb-3 flex items-center gap-2"><HelpCircle size={18}/> 案例一：老闆畫餅</h3>
-                                    <p className="text-sm text-slate-300 mb-4">Q: 「老闆說有新案子，如果說了很多次但都沒發生，我自己要想應對方法；但如果真的有發生又該怎麼記錄呢？」</p>
+                                    <p className="text-sm text-slate-300 mb-4">
+                                        Q: 「老闆說有新案子，如果說了很多次但都沒發生，我自己要想應對方法；但如果真的有發生又該怎麼記錄呢？」
+                                    </p>
                                     <div className="space-y-2 text-sm text-slate-300">
                                         <div className="p-2 border-l-2 border-rose-500 pl-3">🔴 <strong>沒實現 (Bug)：</strong> 屬於黑盒子。每次沒實現就點 <span className="text-rose-400 font-bold">RECURRED</span>。</div>
                                         <div className="p-2 border-l-2 border-emerald-500 pl-3">🟢 <strong>實現了 (Feature)：</strong> 屬於黑盒子 <span className="text-emerald-400 font-bold">SOLVED</span> (驗證成功) + 檔案館 <strong className="text-emerald-400">里程碑</strong> (慶祝)。</div>
                                     </div>
                                 </div>
+
                                 <div className="bg-indigo-500/10 border border-indigo-500/20 p-5 rounded-xl">
                                     <h3 className="text-indigo-400 font-bold mb-3 flex items-center gap-2"><HelpCircle size={18}/> 案例二：紙本筆記</h3>
-                                    <p className="text-xs text-slate-400 leading-relaxed">1. 翻閱。 2. 萃取精華入<strong className="text-emerald-400">檔案館</strong>（記得調日期）。 3. 銷毀紙本。</p>
+                                    <p className="text-sm text-slate-300 mb-4">
+                                        Q: 「那如果是以前的紙本筆記呢，我應該要怎麼整理呢？」
+                                    </p>
+                                    <div className="space-y-2 text-xs text-slate-400 leading-relaxed">
+                                        <p><strong className="text-white">1. 翻閱與感受：</strong> 快速翻閱舊筆記。</p>
+                                        <p><strong className="text-white">2. 萃取 (Extract)：</strong> 只有那些「現在看還有感覺」或「不想忘記」的內容才需要留。將它們輸入進<strong className="text-emerald-400">檔案館</strong>，<strong className="text-amber-400">記得將日期設定為當年的時間</strong>。</p>
+                                        <p><strong className="text-white">3. 銷毀 (Destroy)：</strong> 確認數位化後，果斷丟棄紙本。檔案館是精華區，不是倉庫；紙本佔據的空間應該留給未來。</p>
+                                    </div>
+                                </div>
+
+                                <div className="bg-violet-500/10 border border-violet-500/20 p-5 rounded-xl">
+                                    <h3 className="text-violet-400 font-bold mb-3 flex items-center gap-2"><Youtube size={18}/> 案例三：外部學習 (YouTube/閱讀)</h3>
+                                    <p className="text-sm text-slate-300 mb-4">
+                                        Q: 「我看 YouTube 影片學到一個 B2B 觀念，很有收穫，該怎麼記？」
+                                    </p>
+                                    <div className="space-y-2 text-sm text-slate-300">
+                                        <div className="p-2 border-l-2 border-violet-500 pl-3">
+                                            <strong className="text-violet-300">步驟 1：判斷</strong><br/>
+                                            這不是要解決的問題 (非黑盒子)，這是未來的資產 (檔案館)。雖然來源是外部，但共鳴是內部的。
+                                        </div>
+                                        <div className="p-2 border-l-2 border-violet-500 pl-3">
+                                            <strong className="text-violet-300">步驟 2：記錄</strong><br/>
+                                            進入檔案館，類別選擇 <span className="text-violet-400 font-bold">🧠 洞見 (Insight)</span>。標題寫下觀念核心（如「觀念：像經營 B2B 一樣經營職場」）。
+                                        </div>
+                                        <div className="p-2 border-l-2 border-violet-500 pl-3">
+                                            <strong className="text-violet-300">步驟 3：萃取</strong><br/>
+                                            在內容處，不要貼逐字稿。只寫下<strong className="text-white">「為什麼這點對我有啟發？」</strong>以及<strong className="text-white">「我打算怎麼用？」</strong>。
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -232,18 +307,29 @@
 
         // --- Main Components ---
 
-        const Launcher = ({ onRoute, patternsCount, archivesCount, onOpenManual, onOpenSettings, user, onLogin }) => {
+        const Launcher = ({ onRoute, patternsCount, archivesCount, onOpenManual, onOpenSettings, user, onLogin, focus, onUpdateFocus }) => {
             const [input, setInput] = useState('');
+            const [editingFocus, setEditingFocus] = useState(false);
+            const [tempFocus, setTempFocus] = useState('');
+
+            useEffect(() => { setTempFocus(focus); }, [focus]);
+
             const handleRouting = (target) => {
                 if (!input.trim()) { onRoute(target, null); return; }
                 onRoute(target, { text: input, timestamp: new Date() }); setInput('');
             };
+
+            const saveFocus = () => {
+                onUpdateFocus(tempFocus);
+                setEditingFocus(false);
+            };
+
             return (
                 <div className="flex flex-col h-full p-6 animate-fade-in relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-rose-500 via-slate-800 to-emerald-500 opacity-50"></div>
                     
                     {/* Compact Status Bar */}
-                    <div className="flex justify-between items-center mb-8 relative z-10">
+                    <div className="flex justify-between items-center mb-6 relative z-10">
                         <div className="flex items-center gap-4">
                             <div><h1 className="text-xl font-black tracking-tighter text-white">LIFE <span className="text-slate-500 font-light">OS</span></h1></div>
                         </div>
@@ -254,7 +340,8 @@
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 mb-4">
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-2 gap-4 mb-6">
                         <div className="bg-rose-950/20 border border-rose-900/30 rounded-xl p-4 text-center">
                             <div className="text-2xl font-black text-rose-400 mb-1">{patternsCount}</div>
                             <div className="text-[10px] text-rose-300/60 font-bold tracking-wider">ACTIVE SIGNALS</div>
@@ -265,7 +352,36 @@
                         </div>
                     </div>
 
-                    <div className="flex-1 flex flex-col justify-start relative z-10 max-w-lg mx-auto w-full pt-4">
+                    {/* Strategic Compass (New) */}
+                    <div className="mb-8 relative z-10">
+                        <div className="flex items-center gap-2 mb-2">
+                            <Compass size={14} className="text-amber-400" />
+                            <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest">Strategic Compass (北極星)</span>
+                        </div>
+                        <div className="bg-slate-900/50 border border-slate-700/50 rounded-lg p-1 flex items-center">
+                            {editingFocus ? (
+                                <input 
+                                    autoFocus
+                                    type="text" 
+                                    value={tempFocus}
+                                    onChange={(e) => setTempFocus(e.target.value)}
+                                    onBlur={saveFocus}
+                                    onKeyDown={(e) => e.key === 'Enter' && saveFocus()}
+                                    className="w-full bg-slate-950 text-slate-200 text-xs px-3 py-2 rounded focus:outline-none focus:ring-1 focus:ring-amber-500/50"
+                                    placeholder="輸入本季核心目標..."
+                                />
+                            ) : (
+                                <div 
+                                    onClick={() => setEditingFocus(true)}
+                                    className={`w-full px-3 py-2 text-xs cursor-pointer truncate ${!focus ? 'text-slate-600 italic' : 'text-slate-300 font-medium'}`}
+                                >
+                                    {focus || "點擊設定當前航向..."}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="flex-1 flex flex-col justify-start relative z-10 max-w-lg mx-auto w-full pt-2">
                         <label className="text-slate-400 text-sm mb-4 font-medium flex items-center gap-2 animate-pulse"><Zap size={16} className="text-amber-400" /> 正在發生什麼事？</label>
                         
                         <div className="relative group mb-8"><div className="absolute -inset-0.5 bg-gradient-to-r from-rose-500/50 to-emerald-500/50 rounded-xl blur opacity-30 group-hover:opacity-60 transition duration-500"></div><textarea value={input} onChange={e => setInput(e.target.value)} placeholder="捕捉當下的念頭..." className="relative w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-lg text-white placeholder:text-slate-600 focus:outline-none focus:border-slate-500 min-h-[140px] resize-none shadow-2xl" /></div>
@@ -366,7 +482,7 @@
                                 <div className="flex gap-2 mt-3">
                                     <button onClick={() => handleInteraction(p.id, 'solve')} className={`flex-1 py-2 rounded text-[10px] font-bold border transition-colors ${interactionType === 'solve' && interactingId === p.id ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/20'}`}>✅ SOLVED</button>
                                     <button onClick={() => handleInteraction(p.id, 'memo')} className={`flex-1 py-2 rounded text-[10px] font-bold border transition-colors ${interactionType === 'memo' && interactingId === p.id ? 'bg-indigo-500 text-white border-indigo-500' : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20 hover:bg-indigo-500/20'}`}>📝 MEMO</button>
-                                    <button onClick={() => handleInteraction(p.id, 'recur')} className={`flex-1 py-2 rounded text-[10px] font-bold border transition-colors ${interactionType === 'recur' && interactingId === p.id ? 'bg-rose-500 text-white border-rose-500' : 'bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20'}`}>RECURRED (+1)</button>
+                                    <button onClick={() => handleInteraction(p.id, 'recur')} className={`flex-1 py-2 rounded text-[10px] font-bold border transition-colors ${interactionType === 'recur' && interactingId === p.id ? 'bg-rose-900/30 text-rose-300 border-rose-800' : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'}`}>RECURRED (+1)</button>
                                 </div>
                                 {interactingId === p.id && (
                                     <div className="mt-3 pt-3 border-t border-slate-700/50 animate-fade-in bg-slate-950/30 -mx-2 px-2 pb-2 rounded">
@@ -469,7 +585,8 @@
                 memory: { label: '回憶', icon: Book, color: 'text-indigo-400', bg: 'bg-indigo-500/10', border: 'border-indigo-500/20', hover: 'hover:border-indigo-500/50 hover:shadow-[0_0_15px_rgba(99,102,241,0.1)]' }, 
                 travel: { label: '旅遊', icon: Globe, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', hover: 'hover:border-emerald-500/50 hover:shadow-[0_0_15px_rgba(52,211,153,0.1)]' }, 
                 milestone: { label: '里程碑', icon: Star, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', hover: 'hover:border-amber-500/50 hover:shadow-[0_0_15px_rgba(251,191,36,0.1)]' }, 
-                love: { label: '情感', icon: Heart, color: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20', hover: 'hover:border-rose-500/50 hover:shadow-[0_0_15px_rgba(251,113,133,0.1)]' } 
+                love: { label: '情感', icon: Heart, color: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20', hover: 'hover:border-rose-500/50 hover:shadow-[0_0_15px_rgba(251,113,133,0.1)]' },
+                insight: { label: '洞見', icon: Lightbulb, color: 'text-violet-400', bg: 'bg-violet-500/10', border: 'border-violet-500/20', hover: 'hover:border-violet-500/50 hover:shadow-[0_0_15px_rgba(139,92,246,0.1)]' }
             };
 
             // Group by year logic
@@ -493,7 +610,7 @@
                                 <input type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="標題 (選填)..." className="w-full bg-transparent text-white font-bold focus:outline-none border-b border-slate-700 focus:border-emerald-500 transition-colors py-2" />
                             </div>
                             <textarea value={newContent} onChange={e => setNewContent(e.target.value)} placeholder="內容..." className="w-full bg-slate-950/50 p-3 rounded text-sm text-slate-300 min-h-[100px] mb-3 focus:outline-none resize-none border border-slate-800 focus:border-emerald-500/50" />
-                            <div className="grid grid-cols-4 gap-2 mb-4">{Object.entries(CATEGORIES).map(([key, conf]) => { const Icon = conf.icon; return (<button key={key} onClick={() => setNewType(key)} className={`flex flex-col items-center justify-center py-2 rounded-lg border transition-all ${newType === key ? 'border-emerald-500 bg-emerald-500/20 text-emerald-300' : 'border-slate-700 bg-slate-800 text-slate-500'}`}><Icon size={16} className="mb-1" /><span className="text-[10px] font-bold">{conf.label}</span></button>); })}</div>
+                            <div className="grid grid-cols-5 gap-2 mb-4">{Object.entries(CATEGORIES).map(([key, conf]) => { const Icon = conf.icon; return (<button key={key} onClick={() => setNewType(key)} className={`flex flex-col items-center justify-center py-2 rounded-lg border transition-all ${newType === key ? 'border-emerald-500 bg-emerald-500/20 text-emerald-300' : 'border-slate-700 bg-slate-800 text-slate-500'}`}><Icon size={16} className="mb-1" /><span className="text-[10px] font-bold">{conf.label}</span></button>); })}</div>
                             <div className="flex gap-2"><button onClick={() => setIsAdding(false)} className="flex-1 py-3 rounded bg-slate-800 text-slate-400 text-xs font-bold">取消</button><button onClick={addArchive} className="flex-1 py-3 rounded bg-emerald-600 text-white text-xs font-bold shadow-lg shadow-emerald-900/20">存入檔案館</button></div>
                         </div>
                     ) : (
@@ -590,6 +707,7 @@
             const [showManual, setShowManual] = useState(false);
             const [showSettings, setShowSettings] = useState(false);
             const [counts, setCounts] = useState({ patterns: 0, archives: 0 });
+            const [focus, setFocus] = useState('');
 
             useEffect(() => {
                 const initAuth = async () => {
@@ -614,12 +732,15 @@
                 if (!user) return;
                 const unsubP = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'patterns'), snap => { setCounts(prev => ({...prev, patterns: snap.size})); });
                 const unsubA = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'archives'), snap => { setCounts(prev => ({...prev, archives: snap.size})); });
-                return () => { unsubP(); unsubA(); };
+                const unsubF = onSnapshot(doc(db, 'artifacts', appId, 'users', user.uid, 'data', 'status'), snap => { if(snap.exists()) setFocus(snap.data().focus || ''); });
+                
+                return () => { unsubP(); unsubA(); unsubF(); };
             }, [user]);
 
             const handleRoute = (target, data) => { setIncomingData(data); setActiveTab(target); };
             const handleLogin = async () => { try { await signInWithPopup(auth, provider); } catch(e) { alert("登入失敗: " + e.message); } };
-            
+            const handleUpdateFocus = async (newFocus) => { if(user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'data', 'status'), { focus: newFocus }, { merge: true }); };
+
             if (!user) return (<div className="h-[100dvh] flex flex-col items-center justify-center bg-slate-950 text-slate-400 p-8 text-center font-mono"><Hexagon size={48} className="text-slate-700 mb-4 animate-pulse" /><h1 className="text-2xl text-white font-bold mb-2">LIFE OS</h1><p className="text-sm mb-8">SYSTEM BOOT SEQUENCE...</p><button onClick={handleLogin} className="px-6 py-2 bg-slate-800 text-white rounded border border-slate-700 hover:border-slate-500 font-bold tracking-wide">IDENTIFY USER (LOGIN)</button><div className="mt-8"><button onClick={() => setShowSettings(true)} className="text-[10px] text-slate-600 hover:text-slate-400 flex items-center gap-1"><Settings size={10} /> CONFIGURATION</button></div>{showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}</div>);
 
             return (
@@ -627,7 +748,7 @@
                     <div className="flex-1 overflow-hidden relative bg-slate-950">
                         {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
                         {showManual && <SystemManual onClose={() => setShowManual(false)} />}
-                        {activeTab === 'launcher' && (<Launcher onRoute={handleRoute} patternsCount={counts.patterns} archivesCount={counts.archives} onOpenManual={() => setShowManual(true)} onOpenSettings={() => setShowSettings(true)} user={user} onLogin={handleLogin} />)}
+                        {activeTab === 'launcher' && (<Launcher onRoute={handleRoute} patternsCount={counts.patterns} archivesCount={counts.archives} onOpenManual={() => setShowManual(true)} onOpenSettings={() => setShowSettings(true)} user={user} onLogin={handleLogin} focus={focus} onUpdateFocus={handleUpdateFocus} />)}
                         {activeTab === 'blackbox' && (<BlackBoxModule user={user} incomingData={incomingData} onClearIncoming={() => setIncomingData(null)} />)}
                         {activeTab === 'archive' && (<ArchivesModule user={user} incomingData={incomingData} onClearIncoming={() => setIncomingData(null)} />)}
                     </div>
